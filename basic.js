@@ -297,8 +297,12 @@ function outside(x) {
 }
 var inside = outside(3);
 var result = inside(5); 
-console.log('inside function return value is: ' + result);
-console.log('inside function return value is: ' + outside(3)(5));
+console.log('inside function return value is: ' + result); // 8
+console.log('inside function return value is: ' + outside(3)(5)); // 8
+
+//ES6开始引入了两个新类型参数：默认参数(default paramter)，剩余参数(rest parameter)
+function multiply(a, b=1) {} //给参数b设置默认值1
+function multiply2(a, ...b) {} //从第二个参数起，保存到参数b中
 
 //声明一个生成器函数:
 function* generator(i) {
@@ -312,10 +316,171 @@ console.log(gen.next().value); //读取第二个yield语句产生的值
 console.log(gen.next().value); //第三个
 
 
+//shorter functions, 以下两种因素触进了引入箭头函数：更简洁的语法，纠正函数中
+//this值不一致的问题
+var a = [
+    'a',
+	'bbb',
+	'cc',
+	'ddddd'
+];
+
+var a2 = a.map(function(s) {return s.length;}); //求数组中每个元素的长度值
+console.log(a2);
+
+var a3 = a.map(s => s.length); //求数组中每个元素的长度值
+console.log(a3);
+
+//没有引进箭头函数之前，每个新函数的中的this绑定的对象都是不一样的
+//这不符合面象对象编程思想
+function Person() {
+    console.log('outer `this` equal window ' + (this === window)); // false
+
+	function groupUp() {
+		console.log('inner `this` equal window: ' + (this === window)); // true
+	};
+
+	groupUp();
+}
+var p = new Person();
+
+//在ES 3/5中，可以通过将`this`赋值给一个变量来达到值一致
+function Person2() {
+    var self = this;
+	function groupUp() {
+		console.log(this); //window对象
+	    console.log(self); //Person2对象
+		function t2() {
+		    console.log(this); //window对象
+		}
+		t2();
+	}
+	groupUp();
+}
+var p2 = new Person2();
+
 function f4() {
 	'use strict';
     return this;
 }
+console.log(f4());
+
+var m1 = {
+    sayHelo: function() {
+	    console.log(this);
+	}
+}
+var m = m1.sayHelo;
+m(); //window
+
+//还可以通过function.bind()来达到`this`值的一致性
+var module = {
+	k: this, //因为是在全局环境下赋值而不是调用，所以`this`指向全局对象window
+    x: 42,
+	getX: function() { console.log(this.x); }, //42
+	say: function() { 
+		console.log(this); 
+		var a = {};
+		a.helo = function() {
+		    console.log(this);
+		}
+		a.helo(); // Object a
+		m1.sayHelo(); // Object m1
+	},
+	say2: function() { console.log(this.k); }
+};
+module.say(); //module
+module.say2(); //window
+console.log(module.k); //window
+module.getX();
+
+var unboundGetX = module.getX;
+unboundGetX(); //因为在全局环境下调用unboundGetX(),`this`指向window,而window没有x属性，所以结果为:undefined
+
+var boundGetX = unboundGetX.bind(module);
+boundGetX(); //通过bind()传递module对象进去，`this`指向module对象，而module.x==42,所以结果为：42
+
+
+//另外一种就是通过箭头函数来维持`this`值的一致性
+function Person3() {
+    console.log(this); // Person3
+	(() => { console.log(this); })(); // Person3
+}
+var p3 = new Person3();
+
+function Person4() {
+    this.name = 'abc';
+	this.say = function() {
+	    console.log(this); //Person4
+		function test() {
+		    console.log(this); // window
+		}
+        test();
+	};
+}
+var p4 = new Person4();
+p4.say();
+
+//javascript支持一元、二元、三元运算符：
+var x=0;
+x++;
+++x;
+console.log(x); //2
+
+var y = 1 + 2;
+console.log(y); //3
+
+var z =  true? 3: 4;
+console.log(z); //3
+
+//解构
+var foo = ['a','b', 'c'];
+var [a, b, c] = foo;
+console.log(a); //a
+console.log(b); //b
+console.log(c); //c
+
+//delete 删除隐式声明的变量、对象、对象属性、数组元素
+//delete一个数组元素，数组长度不变，其值为undefined
+//delete成功，返回true,否则返回false
+x = 42;
+var y = 43;
+myobj = new Number();
+myobj.h = 4;
+delete x; //true
+delete y; //false (不能删除通过var定义的变量)
+delete Math.PI; //false (不能删除预定义的属性)
+delete myobj.h; //true
+delete myobj; //true
+
+var trees = new Array('a', 'b', 'c', 'd');
+delete trees[3];
+console.log('trees length is: ' + trees.length); //4
+if (3 in trees) { //条件不成立
+    console.log('3th element exists'); //不会执行
+}
+
+var trees2 = new Array('a', 'b', 'c', 'd');
+trees2[3] = undefined;
+if (3 in trees2) { //条件成立
+    console.log('3th element exists' );
+}
+
+//in关键字用来检测一个属性是否存在于指定的对象中
+var trees = new Array('a', 'b', 'c', 'd');
+console.log('0 in trees: ' + (0 in trees));
+console.log('a in trees: ' + ('a' in trees));
+console.log('length in trees: ' + ('length' in trees));
+
+//数组
+var myVar = [1,2];
+var myArray = new Array("hello", myVar, 3.14);
+console.log(myArray);
+
+var myArray = ['a', 'b'];
+console.log(myArray);
+
+
 
 if (window.f4() == window) {console.log('returned value of f4() equal window object')}
 
